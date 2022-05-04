@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+  loki:
+    image: grafana/loki:2.5.0
+    ports:
+      - "3100:3100"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
