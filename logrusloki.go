@@ -22,6 +22,8 @@ type LokiHookOptions struct {
 
 	// HttpClient allows for a custom http.Client to be used when pushing logs to loki
 	HttpClient *http.Client
+
+	// Todo: Add batching
 }
 
 func newDefaultOptions() *LokiHookOptions {
