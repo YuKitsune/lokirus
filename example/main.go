@@ -6,8 +6,14 @@ import (
 )
 
 func main() {
-	hook := logrusloki.NewLokiHook(
+
+	opts := logrusloki.NewLokiHookOptions().
+		WithLevelMap(logrusloki.LevelMap{logrus.PanicLevel: "critical"}).
+		WithStaticLabels(logrusloki.Labels{"app": "example"})
+
+	hook := logrusloki.NewLokiHookWithOpts(
 		"http://localhost:3100",
+		opts,
 		logrus.TraceLevel,
 		logrus.DebugLevel,
 		logrus.InfoLevel,

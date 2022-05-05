@@ -67,11 +67,15 @@ func TestLokiHook_Fires(t *testing.T) {
 
 }
 
-func TestLokiHook_AddsCustomLabels(t *testing.T) {
+func TestLokiHook_SendsStaticLabels(t *testing.T) {
 
 }
 
-func TestLokiHook_ReMapsLevel(t *testing.T) {
+func TestLokiHook_SendsDynamicLabels(t *testing.T) {
+
+}
+
+func TestLokiHook_ReMapsLevels(t *testing.T) {
 
 }
 

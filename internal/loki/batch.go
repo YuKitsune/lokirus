@@ -1,13 +1,13 @@
 package loki
 
-type batch struct {
-	Streams []stream `json:"streams"`
+type Batch struct {
+	Streams []Stream `json:"streams"`
 }
 
-func NewBatch() *batch {
-	return &batch{[]stream{}}
+func NewBatch() *Batch {
+	return &Batch{[]Stream{}}
 }
 
-func (b *batch) AddStream(s *stream) {
+func (b *Batch) AddStream(s *Stream) {
 	b.Streams = append(b.Streams, *s)
 }
