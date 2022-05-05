@@ -1,88 +1,304 @@
 package logrusloki_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/ory/dockertest"
-	"github.com/ory/dockertest/docker"
-	"log"
-	"os"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	logrusloki "github.com/yukitsune/logrus-loki"
+	"github.com/yukitsune/logrus-loki/internal/loki"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"strconv"
 	"testing"
-	"time"
 )
 
-const host string = "localhost"
-const port string = "3100"
+const testFormatterPrefix = "this is a test"
 
-func TestMain(m *testing.M) {
-
-	image := "grafana/loki"
-	version := "2.5.0"
-
-	// Set up the loki container
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		log.Fatalf("Could not connect to docker: %s", err)
-	}
-
-	// pull mongodb docker image
-	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: image,
-		Tag:        version,
-
-		// Expose the Loki port
-		PortBindings: map[docker.Port][]docker.PortBinding{
-			docker.Port(fmt.Sprintf("%s/tcp", port)): {{HostIP: "", HostPort: port}},
-		},
-	}, func(config *docker.HostConfig) {
-		// set AutoRemove to true so that stopped container goes away by itself
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{
-			Name: "no",
-		}
-	})
-
-	if err != nil {
-		log.Fatalf("Could not start resource: %s", err)
-	}
-
-	// Kill the container after a while
-	err = resource.Expire(uint((5 * time.Minute) / time.Second))
-	if err != nil {
-		log.Fatalf("Could not set resource expiry: %s", err)
-	}
-
-	code := m.Run()
-
-	// When we're done, kill and remove the container
-	if err = pool.Purge(resource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-
-	os.Exit(code)
+type testFormatter struct {
 }
 
-// Todo
+func (f *testFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	return []byte(fmt.Sprintf("%s: %s", testFormatterPrefix, entry.Message)), nil
+}
+
+type mockRoundTripper struct {
+	req *http.Request
+}
+
+func (r *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	r.req = req
+
+	return &http.Response{
+		StatusCode: http.StatusCreated,
+		Body:       bodyReadCloser{bytes.NewBuffer([]byte{})},
+	}, nil
+}
+
+func (r *mockRoundTripper) UnmarshalRequest(v interface{}) error {
+
+	reqData, err := ioutil.ReadAll(r.req.Body)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(reqData, &v)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type bodyReadCloser struct {
+	io.Reader
+}
+
+func (rc bodyReadCloser) Close() error {
+	return nil
+}
 
 func TestLokiHook_Fires(t *testing.T) {
 
+	// Arrange
+	client, roundTripper := getClient()
+	hook := logrusloki.NewLokiHookWithOpts(
+		"",
+		logrusloki.NewLokiHookOptions().
+			WithStaticLabels(logrusloki.Labels{"test": t.Name()}).
+			WithHttpClient(client),
+		logrus.AllLevels...)
+
+	logger := logrus.New()
+	logger.AddHook(hook)
+
+	// Act
+	logger.Info(t.Name())
+
+	var sentBatch loki.Batch
+	err := roundTripper.UnmarshalRequest(&sentBatch)
+	assert.NoError(t, err)
+
+	// Assert
+	// Ensure the label and message were sent
+	assert.Equal(t, sentBatch.Streams[0].Labels["test"], t.Name())
+	assert.Contains(t, sentBatch.Streams[0].Entries[0][1], t.Name())
 }
 
 func TestLokiHook_SendsStaticLabels(t *testing.T) {
 
+	// Arrange
+	staticLabels := logrusloki.Labels{
+		"test":            t.Name(),
+		"my_first_label":  "abc",
+		"my_second_label": "123",
+		"my_third_label":  "!@#",
+	}
+
+	client, roundTripper := getClient()
+	hook := logrusloki.NewLokiHookWithOpts(
+		"",
+		logrusloki.NewLokiHookOptions().
+			WithStaticLabels(staticLabels).
+			WithHttpClient(client),
+		logrus.AllLevels...)
+
+	logger := logrus.New()
+	logger.AddHook(hook)
+
+	// Ensure we get the same labels every time
+	for i := 0; i < 10; i++ {
+
+		// Act
+		logger.Infof("test %d", i)
+
+		var sentBatch loki.Batch
+		err := roundTripper.UnmarshalRequest(&sentBatch)
+		assert.NoError(t, err)
+
+		for k, v := range staticLabels {
+			sentValue, hasSentValue := sentBatch.Streams[0].Labels[k]
+
+			// Assert
+			// Ensure our static labels are all present
+			assert.True(t, hasSentValue)
+			assert.Equal(t, v, sentValue)
+		}
+	}
 }
 
 func TestLokiHook_SendsDynamicLabels(t *testing.T) {
 
+	// Arrange
+
+	// Every time we call the label provider, we'll return whatever counter is
+	// Counter will be incremented later
+	// It's a weird pattern, but it works
+	counter := 0
+	fn := func(entry *logrus.Entry) logrusloki.Labels {
+		l := logrusloki.Labels{
+			"count": strconv.Itoa(counter),
+		}
+
+		return l
+	}
+
+	client, roundTripper := getClient()
+	hook := logrusloki.NewLokiHookWithOpts(
+		"",
+		logrusloki.NewLokiHookOptions().
+			WithDynamicLabelProvider(fn).
+			WithHttpClient(client),
+		logrus.AllLevels...)
+
+	logger := logrus.New()
+	logger.AddHook(hook)
+
+	for counter = 0; counter < 10; counter++ {
+
+		// Act
+		logger.Infof(t.Name())
+
+		var sentBatch loki.Batch
+		err := roundTripper.UnmarshalRequest(&sentBatch)
+		assert.NoError(t, err)
+
+		sentValue, hasSentValue := sentBatch.Streams[0].Labels["count"]
+
+		// Assert
+		// Ensure the count label is different every time
+		assert.True(t, hasSentValue)
+		assert.Equal(t, strconv.Itoa(counter), sentValue)
+	}
+}
+
+func TestLokiHook_SendsLevelLabel(t *testing.T) {
+
+	// Arrange
+
+	// Intentionally ignoring Fatal and Panic as they will kill the program
+	// Debug and Trace aren't sent from hooks
+	levels := []logrus.Level{
+		logrus.ErrorLevel,
+		logrus.WarnLevel,
+		logrus.InfoLevel,
+	}
+
+	client, roundTripper := getClient()
+	hook := logrusloki.NewLokiHookWithOpts(
+		"",
+		logrusloki.NewLokiHookOptions().
+			WithHttpClient(client),
+		levels...)
+
+	logger := logrus.New()
+	logger.AddHook(hook)
+
+	for _, level := range levels {
+		levelStr := level.String()
+
+		// Act
+		logger.Log(level, t.Name())
+
+		var sentBatch loki.Batch
+		err := roundTripper.UnmarshalRequest(&sentBatch)
+		assert.NoError(t, err)
+
+		// Assert
+		// Ensure the level label is present and set to the correct value
+		assert.Equal(t, levelStr, sentBatch.Streams[0].Labels["level"])
+	}
 }
 
 func TestLokiHook_ReMapsLevels(t *testing.T) {
 
+	// Arrange
+
+	// Intentionally ignoring Fatal and Panic as they will kill the program
+	// Debug and Trace aren't sent from hooks
+	levelMap := logrusloki.LevelMap{
+		logrus.ErrorLevel: "my_error",
+		logrus.WarnLevel:  "your_warning",
+		// We'll let InfoLevel remain the same so we can test that unmapped levels use their default value
+	}
+
+	client, roundTripper := getClient()
+	hook := logrusloki.NewLokiHookWithOpts(
+		"",
+		logrusloki.NewLokiHookOptions().
+			WithLevelMap(levelMap).
+			WithHttpClient(client),
+		logrus.AllLevels...)
+
+	logger := logrus.New()
+	logger.AddHook(hook)
+
+	for logrusLevel, customLevel := range levelMap {
+
+		// Act
+		logger.Log(logrusLevel, t.Name())
+
+		var sentBatch loki.Batch
+		err := roundTripper.UnmarshalRequest(&sentBatch)
+		assert.NoError(t, err)
+
+		// Assert
+		// Ensure the level label is our custom label
+		assert.Equal(t, customLevel, sentBatch.Streams[0].Labels["level"])
+	}
+
+	// Test InfoLevel manually since it's not re-mapped
+
+	// Act
+	logger.Log(logrus.InfoLevel, t.Name())
+
+	var sentBatch loki.Batch
+	err := roundTripper.UnmarshalRequest(&sentBatch)
+	assert.NoError(t, err)
+
+	// Assert
+	// Ensure the level label still uses the default value with the other mappings present
+	assert.Equal(t, logrus.InfoLevel.String(), sentBatch.Streams[0].Labels["level"])
 }
 
-func TestLokiHook_UsesCustomHttpClient(t *testing.T) {
-
-}
+//// If any of these tests are passing, then this works...
+//func TestLokiHook_UsesCustomHttpClient(t *testing.T) {
+//
+//}
 
 func TestLokiHook_UsesCustomFormatter(t *testing.T) {
 
+	// Arrange
+	client, roundTripper := getClient()
+	hook := logrusloki.NewLokiHookWithOpts(
+		"",
+		logrusloki.NewLokiHookOptions().
+			WithFormatter(&testFormatter{}).
+			WithHttpClient(client),
+		logrus.AllLevels...)
+
+	logger := logrus.New()
+	logger.AddHook(hook)
+
+	// Act
+	logger.Infoln(t.Name())
+
+	var sentBatch loki.Batch
+	err := roundTripper.UnmarshalRequest(&sentBatch)
+	assert.NoError(t, err)
+
+	// Assert
+	// Ensure the sent log message used the formatter
+	sentMessage := sentBatch.Streams[0].Entries[0][1]
+	assert.Contains(t, sentMessage, testFormatterPrefix)
+}
+
+func getClient() (*http.Client, *mockRoundTripper) {
+	client := &http.Client{}
+	roundTripper := &mockRoundTripper{}
+	client.Transport = roundTripper
+
+	return client, roundTripper
 }
