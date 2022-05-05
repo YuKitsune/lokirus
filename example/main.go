@@ -8,8 +8,13 @@ import (
 func main() {
 
 	opts := logrusloki.NewLokiHookOptions().
+		// Grafana doesn't have a panic level, but it does have a critical level
+		// https://grafana.com/docs/grafana/latest/explore/logs-integration/
 		WithLevelMap(logrusloki.LevelMap{logrus.PanicLevel: "critical"}).
-		WithStaticLabels(logrusloki.Labels{"app": "example"})
+		WithStaticLabels(logrusloki.Labels{
+			"app":         "example",
+			"environment": "development",
+		})
 
 	hook := logrusloki.NewLokiHookWithOpts(
 		"http://localhost:3100",
