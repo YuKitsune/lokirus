@@ -7,9 +7,9 @@ import (
 
 // DynamicLabelProviderFunc defines the func for providing custom dynamic labels
 // https://grafana.com/docs/loki/latest/best-practices/#use-dynamic-labels-sparingly
-type DynamicLabelProviderFunc func(entry *logrus.Entry) map[string]string
+type DynamicLabelProviderFunc func(entry *logrus.Entry) Labels
 
-var defaultDynamicLabelProvider = func(entry *logrus.Entry) map[string]string {
+var defaultDynamicLabelProvider = func(entry *logrus.Entry) Labels {
 	return make(map[string]string)
 }
 
