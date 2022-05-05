@@ -7,8 +7,9 @@ import (
 
 func main() {
 
+	// Configure the Loki hook
 	opts := logrusloki.NewLokiHookOptions().
-		// Grafana doesn't have a panic level, but it does have a critical level
+		// Grafana doesn't have a "panic" level, but it does have a "critical" level
 		// https://grafana.com/docs/grafana/latest/explore/logs-integration/
 		WithLevelMap(logrusloki.LevelMap{logrus.PanicLevel: "critical"}).
 		WithStaticLabels(logrusloki.Labels{
@@ -19,21 +20,17 @@ func main() {
 	hook := logrusloki.NewLokiHookWithOpts(
 		"http://localhost:3100",
 		opts,
-		logrus.TraceLevel,
-		logrus.DebugLevel,
-		logrus.InfoLevel,
-		logrus.WarnLevel,
-		logrus.ErrorLevel,
-		logrus.FatalLevel,
-		logrus.PanicLevel)
+		logrus.AllLevels...)
 
+	// Configure the logger
 	logger := logrus.New()
 	logger.AddHook(hook)
+
+	// Log all the things!
 	logger.WithField("some_key", "some value").Traceln("trace")
-	logger.WithField("some_key", "some value").Debugln("debug")
-	logger.WithField("some_key", "some value").Infoln("info")
-	logger.WithField("some_key", "some value").Warnln("warning")
-	logger.WithField("some_key", "some value").Errorln("error")
-	// logger.WithField("some_key", "some value").Fatalln("fatal")
-	logger.WithField("some_key", "some value").Panicln("panic")
+	logger.WithField("some_other_key", "some other value").Debugln("debug")
+	logger.WithField("foo", "bar").Infoln("info")
+	logger.WithField("fizz", "buzz").Warnln("warning")
+	logger.Errorln("error")
+	logger.Fatalln("fatal")
 }
