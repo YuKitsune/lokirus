@@ -2,22 +2,22 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/yukitsune/logrus-loki"
+	"github.com/yukitsune/lokirus"
 )
 
 func main() {
 
 	// Configure the Loki hook
-	opts := logrusloki.NewLokiHookOptions().
+	opts := lokirus.NewLokiHookOptions().
 		// Grafana doesn't have a "panic" level, but it does have a "critical" level
 		// https://grafana.com/docs/grafana/latest/explore/logs-integration/
-		WithLevelMap(logrusloki.LevelMap{logrus.PanicLevel: "critical"}).
-		WithStaticLabels(logrusloki.Labels{
+		WithLevelMap(lokirus.LevelMap{logrus.PanicLevel: "critical"}).
+		WithStaticLabels(lokirus.Labels{
 			"app":         "example",
 			"environment": "development",
 		})
 
-	hook := logrusloki.NewLokiHookWithOpts(
+	hook := lokirus.NewLokiHookWithOpts(
 		"http://localhost:3100",
 		opts,
 		logrus.AllLevels...)

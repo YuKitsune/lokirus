@@ -1,4 +1,4 @@
-package logrusloki_test
+package lokirus_test
 
 import (
 	"bytes"
@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	logrusloki "github.com/yukitsune/logrus-loki"
-	"github.com/yukitsune/logrus-loki/internal/loki"
+	"github.com/yukitsune/lokirus"
+	"github.com/yukitsune/lokirus/loki"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -64,12 +64,11 @@ func TestLokiHook_Fires(t *testing.T) {
 
 	// Arrange
 	client, roundTripper := getClient()
-	hook := logrusloki.NewLokiHookWithOpts(
+	hook := lokirus.NewLokiHookWithOpts(
 		"",
-		logrusloki.NewLokiHookOptions().
-			WithStaticLabels(logrusloki.Labels{"test": t.Name()}).
-			WithHttpClient(client),
-		logrus.AllLevels...)
+		lokirus.NewLokiHookOptions().
+			WithStaticLabels(lokirus.Labels{"test": t.Name()}).
+			WithHttpClient(client))
 
 	logger := logrus.New()
 	logger.AddHook(hook)
@@ -98,9 +97,9 @@ func TestLokiHook_SendsStaticLabels(t *testing.T) {
 	}
 
 	client, roundTripper := getClient()
-	hook := logrusloki.NewLokiHookWithOpts(
+	hook := lokirus.NewLokiHookWithOpts(
 		"",
-		logrusloki.NewLokiHookOptions().
+		lokirus.NewLokiHookOptions().
 			WithStaticLabels(staticLabels).
 			WithHttpClient(client),
 		logrus.AllLevels...)
@@ -137,8 +136,8 @@ func TestLokiHook_SendsDynamicLabels(t *testing.T) {
 	// Counter will be incremented later
 	// It's a weird pattern, but it works
 	counter := 0
-	fn := func(entry *logrus.Entry) logrusloki.Labels {
-		l := logrusloki.Labels{
+	fn := func(entry *logrus.Entry) lokirus.Labels {
+		l := lokirus.Labels{
 			"count": strconv.Itoa(counter),
 		}
 
@@ -146,9 +145,9 @@ func TestLokiHook_SendsDynamicLabels(t *testing.T) {
 	}
 
 	client, roundTripper := getClient()
-	hook := logrusloki.NewLokiHookWithOpts(
+	hook := lokirus.NewLokiHookWithOpts(
 		"",
-		logrusloki.NewLokiHookOptions().
+		lokirus.NewLokiHookOptions().
 			WithDynamicLabelProvider(fn).
 			WithHttpClient(client),
 		logrus.AllLevels...)
@@ -187,9 +186,9 @@ func TestLokiHook_SendsLevelLabel(t *testing.T) {
 	}
 
 	client, roundTripper := getClient()
-	hook := logrusloki.NewLokiHookWithOpts(
+	hook := lokirus.NewLokiHookWithOpts(
 		"",
-		logrusloki.NewLokiHookOptions().
+		lokirus.NewLokiHookOptions().
 			WithHttpClient(client),
 		levels...)
 
@@ -218,16 +217,16 @@ func TestLokiHook_ReMapsLevels(t *testing.T) {
 
 	// Intentionally ignoring Fatal and Panic as they will kill the program
 	// Debug and Trace aren't sent from hooks
-	levelMap := logrusloki.LevelMap{
+	levelMap := lokirus.LevelMap{
 		logrus.ErrorLevel: "my_error",
 		logrus.WarnLevel:  "your_warning",
 		// We'll let InfoLevel remain the same so we can test that unmapped levels use their default value
 	}
 
 	client, roundTripper := getClient()
-	hook := logrusloki.NewLokiHookWithOpts(
+	hook := lokirus.NewLokiHookWithOpts(
 		"",
-		logrusloki.NewLokiHookOptions().
+		lokirus.NewLokiHookOptions().
 			WithLevelMap(levelMap).
 			WithHttpClient(client),
 		logrus.AllLevels...)
@@ -272,9 +271,9 @@ func TestLokiHook_UsesCustomFormatter(t *testing.T) {
 
 	// Arrange
 	client, roundTripper := getClient()
-	hook := logrusloki.NewLokiHookWithOpts(
+	hook := lokirus.NewLokiHookWithOpts(
 		"",
-		logrusloki.NewLokiHookOptions().
+		lokirus.NewLokiHookOptions().
 			WithFormatter(&testFormatter{}).
 			WithHttpClient(client),
 		logrus.AllLevels...)

@@ -1,11 +1,11 @@
-package logrusloki
+package lokirus
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/yukitsune/logrus-loki/internal/loki"
+	"github.com/yukitsune/lokirus/loki"
 	"io/ioutil"
 	"net/http"
 )

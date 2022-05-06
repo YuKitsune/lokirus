@@ -1,4 +1,4 @@
-module github.com/yukitsune/logrus-loki
+module github.com/yukitsune/lokirus
 
 go 1.18
 
