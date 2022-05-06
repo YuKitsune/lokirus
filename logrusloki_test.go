@@ -52,6 +52,10 @@ func (r *mockRoundTripper) UnmarshalRequest(v interface{}) error {
 	return nil
 }
 
+func (r *mockRoundTripper) Request() *http.Request {
+	return r.req
+}
+
 type bodyReadCloser struct {
 	io.Reader
 }
@@ -84,6 +88,26 @@ func TestLokiHook_Fires(t *testing.T) {
 	// Ensure the label and message were sent
 	assert.Equal(t, sentBatch.Streams[0].Labels["test"], t.Name())
 	assert.Contains(t, sentBatch.Streams[0].Entries[0][1], t.Name())
+}
+
+func TestLokiHook_PushesToCorrectEndpoint(t *testing.T) {
+
+	// Arrange
+	client, roundTripper := getClient()
+	hook := lokirus.NewLokiHookWithOpts(
+		"http://loki:3100",
+		lokirus.NewLokiHookOptions().
+			WithHttpClient(client))
+
+	logger := logrus.New()
+	logger.AddHook(hook)
+
+	// Act
+	logger.Info(t.Name())
+
+	// Assert
+	// Ensure the request URI is correct
+	assert.Equal(t, "http://loki:3100/loki/api/v1/push", roundTripper.Request().URL.String())
 }
 
 func TestLokiHook_SendsStaticLabels(t *testing.T) {
