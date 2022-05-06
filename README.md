@@ -3,7 +3,7 @@
 </h1>
 
 <h3 align="center">
-  A [Loki](https://grafana.com/oss/loki/) hook for [Logrus](https://github.com/Sirupsen/logrus)
+  A <a href="https://grafana.com/oss/loki/">Loki</a> hook for <a href="https://github.com/Sirupsen/logrus">Logrus</a>
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/yukitsune/lokirus/Build%20and%20Test)](https://github.com/yukitsune/lokirus/actions?query=workflow:Build%20and%20Test)
 [![Go Report Card](https://goreportcard.com/badge/github.com/yukitsune/lokirus)](https://goreportcard.com/report/github.com/yukitsune/lokirus)
