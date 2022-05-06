@@ -9,6 +9,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/yukitsune/lokirus)](https://goreportcard.com/report/github.com/yukitsune/lokirus)
 [![License](https://img.shields.io/github/license/YuKitsune/lokirus)](https://github.com/YuKitsune/lokirus/blob/main/LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/YuKitsune/lokirus?include_prereleases)](https://github.com/YuKitsune/lokirus/releases)
+[![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/yukitsune/lokirus)](https://pkg.go.dev/mod/github.com/yukitsune/lokirus)
 
   <img src="demo.gif" />
 </h3>
