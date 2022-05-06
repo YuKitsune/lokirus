@@ -15,9 +15,9 @@ const levelKey = "level"
 
 // LokiHook sends logs to Loki via HTTP.
 type LokiHook struct {
-	endpoint string
-	levels   []logrus.Level
-	opts     LokiHookOptions
+	host   string
+	levels []logrus.Level
+	opts   LokiHookOptions
 }
 
 // NewLokiHook creates a Loki hook for logrus
@@ -29,15 +29,14 @@ func NewLokiHook(host string, levels ...logrus.Level) *LokiHook {
 // NewLokiHookWithOpts creates a Loki hook for logrus with the specified LokiHookOptions
 // if no levels are provided, then logrus.AllLevels is used
 func NewLokiHookWithOpts(host string, opts LokiHookOptions, levels ...logrus.Level) *LokiHook {
-	endpoint := fmt.Sprintf("%s%s", host, pushLogsPath)
 	if len(levels) == 0 {
 		levels = logrus.AllLevels
 	}
 
 	return &LokiHook{
-		endpoint: endpoint,
-		levels:   levels,
-		opts:     opts,
+		host:   host,
+		levels: levels,
+		opts:   opts,
 	}
 }
 
@@ -108,12 +107,14 @@ func (hook *LokiHook) getLevel(level logrus.Level) string {
 
 func (hook *LokiHook) buildRequest(batch *loki.Batch) (*http.Request, error) {
 
+	endpoint := fmt.Sprintf("%s%s", hook.host, pushLogsPath)
+
 	data, err := json.Marshal(batch)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", hook.endpoint, bytes.NewReader(data))
+	req, err := http.NewRequest("POST", endpoint, bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
