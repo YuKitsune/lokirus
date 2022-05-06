@@ -89,7 +89,7 @@ func TestLokiHook_Fires(t *testing.T) {
 func TestLokiHook_SendsStaticLabels(t *testing.T) {
 
 	// Arrange
-	staticLabels := logrusloki.Labels{
+	staticLabels := lokirus.Labels{
 		"test":            t.Name(),
 		"my_first_label":  "abc",
 		"my_second_label": "123",
