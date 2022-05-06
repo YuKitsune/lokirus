@@ -101,8 +101,7 @@ func TestLokiHook_SendsStaticLabels(t *testing.T) {
 		"",
 		lokirus.NewLokiHookOptions().
 			WithStaticLabels(staticLabels).
-			WithHttpClient(client),
-		logrus.AllLevels...)
+			WithHttpClient(client))
 
 	logger := logrus.New()
 	logger.AddHook(hook)
@@ -149,8 +148,7 @@ func TestLokiHook_SendsDynamicLabels(t *testing.T) {
 		"",
 		lokirus.NewLokiHookOptions().
 			WithDynamicLabelProvider(fn).
-			WithHttpClient(client),
-		logrus.AllLevels...)
+			WithHttpClient(client))
 
 	logger := logrus.New()
 	logger.AddHook(hook)
@@ -228,8 +226,7 @@ func TestLokiHook_ReMapsLevels(t *testing.T) {
 		"",
 		lokirus.NewLokiHookOptions().
 			WithLevelMap(levelMap).
-			WithHttpClient(client),
-		logrus.AllLevels...)
+			WithHttpClient(client))
 
 	logger := logrus.New()
 	logger.AddHook(hook)
@@ -275,8 +272,7 @@ func TestLokiHook_UsesCustomFormatter(t *testing.T) {
 		"",
 		lokirus.NewLokiHookOptions().
 			WithFormatter(&testFormatter{}).
-			WithHttpClient(client),
-		logrus.AllLevels...)
+			WithHttpClient(client))
 
 	logger := logrus.New()
 	logger.AddHook(hook)

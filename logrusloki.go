@@ -21,13 +21,19 @@ type LokiHook struct {
 }
 
 // NewLokiHook creates a Loki hook for logrus
+// if no levels are provided, then logrus.AllLevels is used
 func NewLokiHook(host string, levels ...logrus.Level) *LokiHook {
 	return NewLokiHookWithOpts(host, NewLokiHookOptions(), levels...)
 }
 
 // NewLokiHookWithOpts creates a Loki hook for logrus with the specified LokiHookOptions
+// if no levels are provided, then logrus.AllLevels is used
 func NewLokiHookWithOpts(host string, opts LokiHookOptions, levels ...logrus.Level) *LokiHook {
 	endpoint := fmt.Sprintf("%s%s", host, pushLogsPath)
+	if len(levels) == 0 {
+		levels = logrus.AllLevels
+	}
+
 	return &LokiHook{
 		endpoint: endpoint,
 		levels:   levels,

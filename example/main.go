@@ -19,8 +19,7 @@ func main() {
 
 	hook := lokirus.NewLokiHookWithOpts(
 		"http://localhost:3100",
-		opts,
-		logrus.AllLevels...)
+		opts)
 
 	// Configure the logger
 	logger := logrus.New()
