@@ -55,11 +55,6 @@ func main() {
 }
 ```
 
-# Versioning
-
-The version number of this package corresponds to the version of Loki.
-While it may not match the latest version, that doesn't mean it's incompatible.
-
 # Contributing
 
 Contributions are what make the open source community such an amazing place to be, learn, inspire, and create.
