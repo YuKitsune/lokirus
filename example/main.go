@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/yukitsune/lokirus"
 	"math/rand"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/yukitsune/lokirus"
 )
 
 func main() {
