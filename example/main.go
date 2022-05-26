@@ -19,6 +19,7 @@ func main() {
 			"app":         "example",
 			"environment": "development",
 		})
+		// .WithBasicAuth("admin", "secretpassword")
 
 	hook := lokirus.NewLokiHookWithOpts(
 		"http://localhost:3100",
