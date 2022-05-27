@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/yukitsune/lokirus"
 	"math/rand"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/yukitsune/lokirus"
 )
 
 func main() {
@@ -17,7 +18,8 @@ func main() {
 		WithStaticLabels(lokirus.Labels{
 			"app":         "example",
 			"environment": "development",
-		})
+		}).
+		WithBasicAuth("admin", "secretpassword") // Optional
 
 	hook := lokirus.NewLokiHookWithOpts(
 		"http://localhost:3100",

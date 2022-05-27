@@ -1,8 +1,9 @@
 package lokirus
 
 import (
-	"github.com/sirupsen/logrus"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 )
 
 // DynamicLabelProviderFunc defines the func for providing custom dynamic labels
@@ -37,6 +38,11 @@ type LokiHookOptions interface {
 	// Formatter returns the logrus.Formatter to be used when writing log entries
 	Formatter() logrus.Formatter
 
+	// BasicAuth returns the basic authentication credentials to be used
+	// when connecting to Loki.
+	// nil means that no credentials should be used.
+	BasicAuth() *BasicAuthCredentials
+
 	// WithLevelMap allows for logrus.Levels to be re-mapped to a different label value
 	WithLevelMap(LevelMap) LokiHookOptions
 
@@ -57,6 +63,16 @@ type LokiHookOptions interface {
 	// WithFormatter allows for a custom logrus.Formatter to be used when writing log entries
 	// By default, the logrus.TextFormatter will be used
 	WithFormatter(logrus.Formatter) LokiHookOptions
+
+	// WithBasicAuth allows to set a username and password to use when writing to the remote Loki host.
+	WithBasicAuth(username, password string) LokiHookOptions
+}
+
+// BasicAuthCredentials is a structure that holds a username and a password.
+// to be used for HTTP queries.
+type BasicAuthCredentials struct {
+	Username string
+	Password string
 }
 
 type lokiHookOptions struct {
@@ -65,6 +81,7 @@ type lokiHookOptions struct {
 	dynamicLabelProvider DynamicLabelProviderFunc
 	httpClient           *http.Client
 	formatter            logrus.Formatter
+	basicAuthCredentials *BasicAuthCredentials
 }
 
 func NewLokiHookOptions() LokiHookOptions {
@@ -74,11 +91,16 @@ func NewLokiHookOptions() LokiHookOptions {
 		dynamicLabelProvider: defaultDynamicLabelProvider,
 		httpClient:           http.DefaultClient,
 		formatter:            &logrus.TextFormatter{},
+		basicAuthCredentials: nil,
 	}
 }
 
 func (opt *lokiHookOptions) LevelMap() LevelMap {
 	return opt.levelMap
+}
+
+func (opt *lokiHookOptions) BasicAuth() *BasicAuthCredentials {
+	return opt.basicAuthCredentials
 }
 
 func (opt *lokiHookOptions) StaticLabels() Labels {
@@ -95,6 +117,14 @@ func (opt *lokiHookOptions) HttpClient() *http.Client {
 
 func (opt *lokiHookOptions) Formatter() logrus.Formatter {
 	return opt.formatter
+}
+
+func (opt *lokiHookOptions) WithBasicAuth(username, password string) LokiHookOptions {
+	opt.basicAuthCredentials = &BasicAuthCredentials{
+		Username: username,
+		Password: password,
+	}
+	return opt
 }
 
 func (opt *lokiHookOptions) WithLevelMap(levelMap LevelMap) LokiHookOptions {

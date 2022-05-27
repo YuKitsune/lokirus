@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	"github.com/yukitsune/lokirus"
-	"github.com/yukitsune/lokirus/loki"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"testing"
+
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/yukitsune/lokirus"
+	"github.com/yukitsune/lokirus/loki"
 )
 
 const testFormatterPrefix = "this is a test"
@@ -56,6 +57,10 @@ func (r *mockRoundTripper) Request() *http.Request {
 	return r.req
 }
 
+func (r *mockRoundTripper) BasicAuth() (string, string, bool) {
+	return r.req.BasicAuth()
+}
+
 type bodyReadCloser struct {
 	io.Reader
 }
@@ -88,6 +93,47 @@ func TestLokiHook_Fires(t *testing.T) {
 	// Ensure the label and message were sent
 	assert.Equal(t, sentBatch.Streams[0].Labels["test"], t.Name())
 	assert.Contains(t, sentBatch.Streams[0].Entries[0][1], t.Name())
+}
+
+// This test checks that basic auth credentials gets sent
+// if we configure the hook to do so.
+func TestLokiHook_SendsBasicAuthCredentials(t *testing.T) {
+	client, roundTripper := getClient()
+	hook := lokirus.NewLokiHookWithOpts("",
+		lokirus.NewLokiHookOptions().
+			WithStaticLabels(lokirus.Labels{"test": t.Name()}).
+			WithBasicAuth("test-username", "test-password").
+			WithHttpClient(client))
+
+	logger := logrus.New()
+
+	logger.AddHook(hook)
+	logger.Info(t.Name())
+
+	username, password, ok := roundTripper.BasicAuth()
+	assert.True(t, ok)
+	assert.Equal(t, "test-username", username)
+	assert.Equal(t, "test-password", password)
+}
+
+// This tests checks that we are not sending basic auth credentials
+// if we didn't configure them.
+func TestLokiHook_NoUnnecessaryBasicAuth(t *testing.T) {
+	client, roundTripper := getClient()
+	hook := lokirus.NewLokiHookWithOpts("",
+		lokirus.NewLokiHookOptions().
+			WithStaticLabels(lokirus.Labels{"test": t.Name()}).
+			WithHttpClient(client))
+
+	logger := logrus.New()
+
+	logger.AddHook(hook)
+	logger.Info(t.Name())
+
+	username, password, ok := roundTripper.BasicAuth()
+	assert.False(t, ok)
+	assert.Empty(t, username)
+	assert.Empty(t, password)
 }
 
 func TestLokiHook_PushesToCorrectEndpoint(t *testing.T) {

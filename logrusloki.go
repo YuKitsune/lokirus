@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/yukitsune/lokirus/loki"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
+	"github.com/yukitsune/lokirus/loki"
 )
 
 const pushLogsPath = "/loki/api/v1/push"
@@ -120,6 +121,9 @@ func (hook *LokiHook) buildRequest(batch *loki.Batch) (*http.Request, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	if hook.opts.BasicAuth() != nil {
+		req.SetBasicAuth(hook.opts.BasicAuth().Username, hook.opts.BasicAuth().Password)
+	}
 
 	return req, nil
 }
