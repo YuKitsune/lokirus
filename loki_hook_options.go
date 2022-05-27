@@ -41,7 +41,7 @@ type LokiHookOptions interface {
 	// BasicAuth returns the basic authentication credentials to be used
 	// when connecting to Loki.
 	// nil means that no credentials should be used.
-	BasicAuth() *basicAuthCredentials
+	BasicAuth() *BasicAuthCredentials
 
 	// WithLevelMap allows for logrus.Levels to be re-mapped to a different label value
 	WithLevelMap(LevelMap) LokiHookOptions
@@ -68,9 +68,11 @@ type LokiHookOptions interface {
 	WithBasicAuth(username, password string) LokiHookOptions
 }
 
-type basicAuthCredentials struct {
-	username string
-	password string
+// BasicAuthCredentials is a structure that holds a username and a password.
+// to be used for HTTP queries.
+type BasicAuthCredentials struct {
+	Username string
+	Password string
 }
 
 type lokiHookOptions struct {
@@ -79,7 +81,7 @@ type lokiHookOptions struct {
 	dynamicLabelProvider DynamicLabelProviderFunc
 	httpClient           *http.Client
 	formatter            logrus.Formatter
-	basicAuthCredentials *basicAuthCredentials
+	basicAuthCredentials *BasicAuthCredentials
 }
 
 func NewLokiHookOptions() LokiHookOptions {
@@ -97,7 +99,7 @@ func (opt *lokiHookOptions) LevelMap() LevelMap {
 	return opt.levelMap
 }
 
-func (opt *lokiHookOptions) BasicAuth() *basicAuthCredentials {
+func (opt *lokiHookOptions) BasicAuth() *BasicAuthCredentials {
 	return opt.basicAuthCredentials
 }
 
@@ -118,9 +120,9 @@ func (opt *lokiHookOptions) Formatter() logrus.Formatter {
 }
 
 func (opt *lokiHookOptions) WithBasicAuth(username, password string) LokiHookOptions {
-	opt.basicAuthCredentials = &basicAuthCredentials{
-		username: username,
-		password: password,
+	opt.basicAuthCredentials = &BasicAuthCredentials{
+		Username: username,
+		Password: password,
 	}
 	return opt
 }

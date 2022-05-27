@@ -122,7 +122,7 @@ func (hook *LokiHook) buildRequest(batch *loki.Batch) (*http.Request, error) {
 
 	req.Header.Set("Content-Type", "application/json")
 	if hook.opts.BasicAuth() != nil {
-		req.SetBasicAuth(hook.opts.BasicAuth().username, hook.opts.BasicAuth().password)
+		req.SetBasicAuth(hook.opts.BasicAuth().Username, hook.opts.BasicAuth().Password)
 	}
 
 	return req, nil
