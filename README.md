@@ -30,9 +30,9 @@ func main() {
 	// Configure the Loki hook
 	opts := lokirus.NewLokiHookOptions().
 		// Grafana doesn't have a "panic" level, but it does have a "critical" level
-  // https://grafana.com/docs/grafana/latest/explore/logs-integration/
+ 	 // https://grafana.com/docs/grafana/latest/explore/logs-integration/
 		WithLevelMap(lokirus.LevelMap{logrus.PanicLevel: "critical"}).
-    WithFormatter(&logrus.JsonFormatter{})
+   		WithFormatter(&logrus.JSONFormatter{}).
 		WithStaticLabels(lokirus.Labels{
 			"app":         "example",
 			"environment": "development",
