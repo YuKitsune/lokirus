@@ -5,7 +5,7 @@
 <h3 align="center">
   A <a href="https://grafana.com/oss/loki/">Loki</a> hook for <a href="https://github.com/Sirupsen/logrus">Logrus</a>
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/yukitsune/lokirus/Build%20and%20Test)](https://github.com/yukitsune/lokirus/actions?query=workflow:Build%20and%20Test)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/yukitsune/lokirus/go.yml?branch=main)](https://github.com/YuKitsune/lokirus/actions/workflows/go.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/yukitsune/lokirus)](https://goreportcard.com/report/github.com/yukitsune/lokirus)
 [![License](https://img.shields.io/github/license/YuKitsune/lokirus)](https://github.com/YuKitsune/lokirus/blob/main/LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/YuKitsune/lokirus?include_prereleases)](https://github.com/YuKitsune/lokirus/releases)
